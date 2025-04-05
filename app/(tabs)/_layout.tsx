@@ -23,7 +23,7 @@ export default function TabLayout() {
         options={{
           title: 'Gaming Section',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'home' : 'home-outline'} size={26} color={color} />
+            <Ionicons name={focused ? 'game-controller' : 'game-controller-outline'} size={26} color={color} />
           ),
           headerShown: false
         }}
