@@ -1,26 +1,46 @@
-import { View, Text, StyleSheet } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 
-const Header = ({ title }: { title: string }) => {
-    return (
-        <View style={styles.headerContainer}>
-            <Text style={styles.headerText}>{title}</Text>
-        </View>
-    );
+type HeaderProps = {
+    title: string;
+    resetGame: () => void;
 };
+
+const Header = ({ title, resetGame }: HeaderProps) => (
+    <View style={styles.headerContainer}>
+        <Text style={styles.headerText}>{title}</Text>
+        <TouchableOpacity style={styles.refreshButton} onPress={resetGame} activeOpacity={0.7}>
+            <Ionicons name="refresh" color="#fff" size={24} />
+        </TouchableOpacity>
+    </View>
+);
 
 export default Header;
 
 const styles = StyleSheet.create({
     headerContainer: {
         paddingTop: 40,
+        paddingBottom: 10,
+        paddingHorizontal: 20,
         backgroundColor: "#45f9f3a5",
+        flexDirection: "row",
         alignItems: "center",
-        paddingBottom: 10
+        justifyContent: "space-between",
     },
     headerText: {
-        fontSize: 20,
-        letterSpacing: 2,
+        fontSize: 22,
         fontWeight: "bold",
-        color: "#ffffff",
+        color: "#fff",
+        letterSpacing: 1.5,
+    },
+    refreshButton: {
+        backgroundColor: "#45f9f3",
+        padding: 8,
+        borderRadius: 50,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 3,
+        elevation: 5,
     },
 });

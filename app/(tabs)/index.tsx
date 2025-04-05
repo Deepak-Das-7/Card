@@ -1,110 +1,82 @@
-import { View, StyleSheet, Text, TouchableOpacity } from "react-native";
-import React, { useState } from "react";
+import { View, StyleSheet, Modal, Text, TouchableOpacity } from "react-native";
 import GradientBackground from "@/components/universal/Gradient";
 import Footer from "@/components/homepage/Footer";
 import Header from "@/components/homepage/Header";
-import Card from "@/components/game/Card";
-import { images } from "@/assets/data/requireMap";
-import { actorsJSON } from "@/assets/data/actorsJSON";
+import CardArea from "@/components/game/CardArea";
+import PlayerButtons from "@/components/game/PlayerButtons";
+import Status from "@/components/game/Status";
+import { useEffect, useState } from "react";
+import { useGame } from "@/hooks/usePlayerCard";
 
 const ReportGeneratorHome = () => {
-    const [currentPlayer, setCurrentPlayer] = useState(1);
-    const [player1Card, setPlayer1Card] = useState<{ id: string; image: any }>();
-    const [player2Card, setPlayer2Card] = useState<{ id: string; image: any }>();
-    const [player1Name, setPlayer1Name] = useState<string>("");
-    const [player2Name, setPlayer2Name] = useState<string>("");
+    const {
+        currentPlayer,
+        moveCount,
+        player1Card,
+        player2Card,
+        player1Name,
+        player2Name,
+        score,
+        winner,
+        handlePlayerMove,
+        checkWinner,
+        resetGame
+    } = useGame();
 
-    const cardsArray = Object.entries(images).map(([key, value]) => ({
-        id: key,
-        image: value,
-    }));
+    const [showWinnerModal, setShowWinnerModal] = useState(false);
+    const [finalWinner, setFinalWinner] = useState("");
 
-    const getRandomCard = () => {
-        const randomIndex = Math.floor(Math.random() * cardsArray.length);
-        return cardsArray[randomIndex];
-    };
+    useEffect(() => {
+        checkWinner();
+    }, [player1Name, player2Name]);
 
-    const getActorNameById = (id?: string): string => {
-        if (!id) return "Unknown";
-        const actor = actorsJSON.find(({ id: actorId }) => actorId.toString() === id);
-        return actor?.name ?? "Unknown";
-    };
-
-
-    const handlePlayerMove = (player: number) => {
-        const card = getRandomCard();
-
-        if (player === 1) {
-            setPlayer1Card(card);
-            setPlayer1Name(getActorNameById(card.id));
-            setCurrentPlayer(2);
-        } else if (player === 2) {
-            setPlayer2Card(card);
-            setPlayer2Name(getActorNameById(card.id));
-            setCurrentPlayer(1);
+    useEffect(() => {
+        if (score.player1 >= 210 || score.player2 < 0) {
+            setFinalWinner("Player 1");
+            setShowWinnerModal(true);
+        } else if (score.player2 >= 210 || score.player1 < 0) {
+            setFinalWinner("Player 2");
+            setShowWinnerModal(true);
         }
+    }, [score]);
+
+    const handleCloseModal = () => {
+        //reset all states
+        resetGame()
+        setShowWinnerModal(false);
     };
 
     return (
         <GradientBackground>
             <View style={styles.container}>
+                <Header title={"BARWADIH PHOTO GAME"} resetGame={resetGame} />
+                <CardArea
+                    player1Card={player1Card}
+                    player2Card={player2Card}
+                    player1Name={player1Name}
+                    player2Name={player2Name}
+                />
+                <Status
+                    currentPlayer={currentPlayer}
+                    moveCount={moveCount}
+                    winner={winner}
+                    score={score}
+                />
+                <PlayerButtons currentPlayer={currentPlayer} handleMove={handlePlayerMove} />
+                <Footer />
 
-                {/* Cards Area */}
-                <View style={styles.cardsRow}>
-                    <View style={styles.cardWrapper}>
-                        {player1Card && (
-                            <Card
-                                image={player1Card.image}
-                                id={player1Card.id}
-                                name={player1Name}
-                            />
-                        )}
+                <Modal visible={showWinnerModal} transparent animationType="fade">
+                    <View style={styles.modalOverlay}>
+                        <View style={styles.modalContent}>
+                            <Text style={styles.congratsText}>🏆 Congratulations! 🏆</Text>
+                            <Text style={styles.winnerName}>{finalWinner} Wins the Game!</Text>
+                            <TouchableOpacity style={styles.closeButton} onPress={handleCloseModal}>
+                                <Text style={styles.closeButtonText}>Restart new game!</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
-                    <View style={styles.cardWrapper}>
-                        {player2Card && (
-                            <Card
-                                image={player2Card.image}
-                                id={player2Card.id}
-                                name={player2Name}
-                            />
-                        )}
-                    </View>
-                </View>
-
-                {/* Game Status */}
-                <Text style={styles.statusText}>
-                    {`Player ${currentPlayer}'s Turn`}
-                </Text>
-
-                {/* Buttons for Players */}
-                <View style={styles.buttonsRow}>
-                    <TouchableOpacity
-                        style={[
-                            styles.button,
-                            currentPlayer !== 1 && styles.buttonDisabled,
-                        ]}
-                        onPress={() => handlePlayerMove(1)}
-                        disabled={currentPlayer !== 1}
-                    >
-                        <Text style={styles.buttonText}>Player 1</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={[
-                            styles.button,
-                            currentPlayer !== 2 && styles.buttonDisabled,
-                        ]}
-                        onPress={() => handlePlayerMove(2)}
-                        disabled={currentPlayer !== 2}
-                    >
-                        <Text style={styles.buttonText}>Player 2</Text>
-                    </TouchableOpacity>
-                </View>
-
+                </Modal>
             </View>
-
-            {/* Optional: Footer */}
-            <Footer />
         </GradientBackground>
     );
 };
@@ -114,47 +86,46 @@ export default ReportGeneratorHome;
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 20,
         justifyContent: "space-between",
     },
-    statusText: {
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: "rgba(0, 0, 0, 0.7)",
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    modalContent: {
+        width: 300,
+        backgroundColor: "#ffffff",
+        padding: 24,
+        borderRadius: 16,
+        alignItems: "center",
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.5,
+        shadowRadius: 10,
+        elevation: 10,
+    },
+    congratsText: {
         fontSize: 24,
         fontWeight: "bold",
-        color: "#fff",
-        textAlign: "center",
+        color: "#4CAF50",
+        marginBottom: 10,
     },
-    cardsRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
+    winnerName: {
+        fontSize: 20,
+        color: "#333",
+        marginBottom: 20,
     },
-    cardWrapper: {
-        width: "50%",
-        backgroundColor: "#fff",
+    closeButton: {
+        backgroundColor: "#4CAF50",
+        paddingVertical: 10,
+        paddingHorizontal: 24,
         borderRadius: 10,
-        justifyContent: "center",
-        alignItems: "center",
-        overflow: "hidden",
     },
-    buttonsRow: {
-        flexDirection: "row",
-        justifyContent: "space-around",
-        marginVertical: 30,
-    },
-    button: {
-        backgroundColor: "#445bf3",
-        paddingVertical: 12,
-        paddingHorizontal: 20,
-        borderRadius: 10,
-        height: 150,
-        justifyContent: "center",
-    },
-    buttonDisabled: {
-        backgroundColor: "#9E9E9E",
-    },
-    buttonText: {
+    closeButtonText: {
         color: "#fff",
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: "bold",
     },
 });
